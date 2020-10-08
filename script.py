@@ -23,7 +23,7 @@ def login_to_moodle():
           'password': password,
           'remeberusername': 0
           }
-    session.post(url, data=payload)
+    session.post(url, data=payload, timeout=5)
     return session
 
 def updateLastSeenTime(sess, page):
@@ -37,13 +37,23 @@ def updateLastSeenTime(sess, page):
         "Referer": "https://moodle.nu.edu.kz/my/",
         "Upgrade-Insecure-Requests": "1",
     }
-
-    html = sess.get(page, headers=headers).text
+    success = 0
+    try:
+        sess.get(page, headers=headers)
+        success += 1
+    except:
+        print('[!] Timeout error. Failed for {}'.format(page))
+    return success
 
 def attendPages():
-    sess = login_to_moodle()
-    for page in pages:
-        updateLastSeenTime(sess, page)
+    try:
+        sess = login_to_moodle()
+        completed = 0
+        for page in pages:
+            completed += updateLastSeenTime(sess, page)
+        print('[*] Success for {} courses out of {}'.format(completed, len(pages)))
+    except:
+        print('[!] Timeout error. Moodle is probably down.')
 
 def main():
     attendPages()
